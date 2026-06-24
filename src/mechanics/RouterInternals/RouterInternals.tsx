@@ -117,8 +117,8 @@ function holStep(queues: number[][]): {
   }
 }
 
-function voqStep(voq: number[][][]): {
-  newVoq: number[][][]
+function voqStep(voq: number[][]): {
+  newVoq: number[][]
   matched: [number, number][]
   blocked: number[]
 } {
@@ -149,7 +149,7 @@ function voqStep(voq: number[][][]): {
 interface SimState {
   mode: 'hol' | 'voq'
   holQ: number[][]
-  voqQ: number[][][]
+  voqQ: number[][]
   slot: number
   delivered: number
   animMatched: [number, number][]
@@ -165,7 +165,7 @@ type Action =
 
 function initState(setup: Setup, mode: 'hol' | 'voq'): SimState {
   const numOut = Math.max(...setup.queues.flat(), 2) + 1
-  const voqQ: number[][][] = setup.queues.map(() => Array<number>(numOut).fill(0))
+  const voqQ: number[][] = setup.queues.map(() => Array<number>(numOut).fill(0))
   setup.queues.forEach((q, i) => q.forEach(d => voqQ[i][d]++))
   return {
     mode,
@@ -223,7 +223,7 @@ function makeReducer(setup: Setup, maxSlots: number, totalPackets: number) {
 // ── Component ────────────────────────────────────────────────────────────────
 
 export function RouterInternals({ level, onComplete }: RouterInternalsProps) {
-  const baseSetup = level.setup as Setup
+  const baseSetup = level.setup as unknown as Setup
   const [scenarioKey, setScenarioKey] = useState(0)
   const setup = useMemo(() => randomizeSetup(baseSetup, level.id), [baseSetup, level.id, scenarioKey])
   const hints = HINTS[level.id] ?? []
@@ -412,7 +412,7 @@ export function RouterInternals({ level, onComplete }: RouterInternalsProps) {
             </button>
           ))}
           {modes.length === 1 && (
-            <Badge variant={state.mode === 'hol' ? 'danger' : 'idle'}>
+            <Badge variant={state.mode === 'hol' ? 'down' : 'idle'}>
               {state.mode === 'hol' ? 'FIFO / HOL mode' : 'VOQ mode'}
             </Badge>
           )}

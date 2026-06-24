@@ -136,7 +136,7 @@ function makeVlsmScenario(): Scenario {
     const hosts = [10, 20, 30, 50, 80, 100, 150, 200, 300][rand(0, 8)]
     return { id: `r-${i}`, label: name, hosts }
   })
-  const o2 = rand(0, 255), o3 = rand(0, 255) & ~((1 << (32 - parentPrefix - 8)) - 1)
+  const o3 = rand(0, 255) & ~((1 << (32 - parentPrefix - 8)) - 1)
   const parent = `172.${16 + rand(0, 15)}.${o3}.0/${parentPrefix}`
   const block  = parseCIDR(parent)!
   return {

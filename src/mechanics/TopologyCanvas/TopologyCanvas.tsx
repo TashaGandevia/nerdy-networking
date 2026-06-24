@@ -216,8 +216,6 @@ const NODE_CLR: Record<NodeType, string> = {
 
 const NODE_R = 22  // radius / half-size for hit area
 
-function nodeCenter(n: NodeDef) { return { cx: n.x, cy: n.y } }
-
 // ── Component ────────────────────────────────────────────────────────────────
 
 interface VerifyResult {
@@ -228,7 +226,7 @@ interface VerifyResult {
 }
 
 export function TopologyCanvas({ level, onComplete }: TopologyCanvasProps) {
-  const setup    = level.setup as Setup
+  const setup    = level.setup as unknown as Setup
   const factory  = TEMPLATE_FACTORIES[setup.template] ?? TEMPLATE_FACTORIES['office']
   const minRed   = setup.minRedundancy ?? 0
   const hints    = HINTS[level.id] ?? []

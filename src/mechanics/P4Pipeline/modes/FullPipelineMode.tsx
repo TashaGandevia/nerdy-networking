@@ -10,7 +10,6 @@ import { Badge }  from '@/components/ui/Badge'
 
 interface Props { level: Level; onComplete: (passed: boolean, hintsUsed: number) => void }
 
-type ParserState  = 'start' | 'ethernet' | 'ipv4' | 'accept'
 type IngressTable = 'ipv4_lpm' | 'mac_fwd' | 'firewall'
 type EgressBlock  = 'append_int' | 'recompute_csum'
 type DeparserHeader = 'ethernet' | 'ipv4' | 'int'

@@ -5,7 +5,6 @@
 import { useMemo, useState } from 'react'
 import type { Level } from '@/types'
 import { Button } from '@/components/ui/Button'
-import { Badge }  from '@/components/ui/Badge'
 
 interface Props { level: Level; onComplete: (passed: boolean, hintsUsed: number) => void }
 

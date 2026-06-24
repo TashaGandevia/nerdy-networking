@@ -46,7 +46,7 @@ function makeScenario(): Scenario {
     ['ids', 'load-balancer'],
   ]
   const required = variants[rand(0, variants.length - 1)]
-  const pool     = shuffle(['firewall', 'nat', 'ids', 'load-balancer'])
+  const pool     = shuffle<VNF>(['firewall', 'nat', 'ids', 'load-balancer'])
   return { required, pool }
 }
 
