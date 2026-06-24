@@ -16,6 +16,7 @@ const NAV_ITEMS = [
   { to: '/campaign',  label: 'Campaign',   icon: '▶' },
   { to: '/sandbox',   label: 'Sandbox',    icon: '⚙' },
   { to: '/flashcards',label: 'Flashcards', icon: '◧' },
+  { to: '/study',     label: 'Study Zone', icon: '✎' },
   { to: '/exam-prep', label: 'Exam Prep',  icon: '⏱' },
 ]
 

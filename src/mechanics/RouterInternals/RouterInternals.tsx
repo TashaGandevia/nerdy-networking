@@ -2,7 +2,7 @@
 // Demonstrates HOL (Head-of-Line) blocking vs. VOQ (Virtual Output Queuing)
 // with a step-by-step animated 3×3 input-queued crossbar.
 
-import { useReducer, useEffect, useRef, useMemo } from 'react'
+import { useReducer, useEffect, useRef, useMemo, useState } from 'react'
 import type { Level } from '@/types'
 import { Button } from '@/components/ui/Button'
 import { Badge }  from '@/components/ui/Badge'
@@ -21,6 +21,71 @@ interface Setup {
   targetThroughput: number
   /** Simulation ends after this many slots */
   maxSlots: number
+}
+
+// ── Per-level scenario randomizers ─────────────────────────────────────────
+
+function rand(min: number, max: number) {
+  return Math.floor(Math.random() * (max - min + 1)) + min
+}
+
+function makeAdversarial(): number[][] {
+  // 3 inputs, 3 outputs; I0 always wants O0; I1 wants O0 first (HOL),
+  // then a different port repeatedly; I2 wants the third port repeatedly.
+  const len      = rand(4, 6)
+  const i1Tail   = rand(1, 2)            // 1 or 2
+  const i2Port   = i1Tail === 1 ? 2 : 1  // whichever I1 doesn't use
+  return [
+    Array(len).fill(0),
+    [0, ...Array(len - 1).fill(i1Tail)],
+    Array(len).fill(i2Port),
+  ]
+}
+
+function makeUniform(): number[][] {
+  // 3 inputs × 3 outputs, each input wants each output equally — adversarial for FIFO
+  const cycles = rand(2, 3)
+  const cycle0 = [0, 1, 2]
+  const cycle1 = [1, 2, 0]
+  const cycle2 = [2, 0, 1]
+  return [
+    Array.from({ length: cycles * 3 }, (_, i) => cycle0[i % 3]),
+    Array.from({ length: cycles * 3 }, (_, i) => cycle1[i % 3]),
+    Array.from({ length: cycles * 3 }, (_, i) => cycle2[i % 3]),
+  ]
+}
+
+function randomizeSetup(base: Setup, levelId: string): Setup {
+  // B-L08 = adversarial HOL demo; B-L09 = same pattern with VOQ toggle;
+  // B-L10 = uniform crossbar boss; others fall back to the level's authored queues.
+  if (levelId === 'B-L08' || levelId === 'B-L09') {
+    const queues = makeAdversarial()
+    return {
+      ...base,
+      queues,
+      maxSlots: levelId === 'B-L08' ? queues[0].length + rand(1, 2) : queues[0].length + rand(2, 3),
+    }
+  }
+  if (levelId === 'B-L10') {
+    const queues = makeUniform()
+    return { ...base, queues, maxSlots: queues[0].length + rand(2, 4) }
+  }
+  return base
+}
+
+const HINTS: Record<string, string[]> = {
+  'B-L08': [
+    'In FIFO mode each input has one queue — the head packet blocks everything behind it, even if those packets could go elsewhere.',
+    'Watch what happens to Input 1: it gets matched on slot 1, but only one packet per slot — the rest of its queue is stuck behind any new head packet.',
+  ],
+  'B-L09': [
+    'VOQ gives each input a separate queue per output, so the scheduler can pick *any* matchable packet rather than only the head.',
+    'In each slot you want a maximum matching: at most one packet per input and one per output, but as many pairs as possible.',
+  ],
+  'B-L10': [
+    'Under uniform traffic, every input wants every output equally — FIFO peaks at ~58% throughput due to head-of-line blocking.',
+    'VOQ pairs inputs and outputs greedily each slot; with a good matching, throughput approaches 100%.',
+  ],
 }
 
 // Blue / Green / Orange — one colour per output port (up to 3)
@@ -158,7 +223,12 @@ function makeReducer(setup: Setup, maxSlots: number, totalPackets: number) {
 // ── Component ────────────────────────────────────────────────────────────────
 
 export function RouterInternals({ level, onComplete }: RouterInternalsProps) {
-  const setup        = level.setup as Setup
+  const baseSetup = level.setup as Setup
+  const [scenarioKey, setScenarioKey] = useState(0)
+  const setup = useMemo(() => randomizeSetup(baseSetup, level.id), [baseSetup, level.id, scenarioKey])
+  const hints = HINTS[level.id] ?? []
+  const [hintIdx, setHintIdx] = useState(0)
+
   const modes        = setup.mode === 'both' ? (['hol', 'voq'] as const) : [setup.mode as 'hol' | 'voq']
   const totalPackets = useMemo(() => setup.queues.reduce((s, q) => s + q.length, 0), [setup])
   const maxSlots     = setup.maxSlots ?? 8
@@ -180,9 +250,22 @@ export function RouterInternals({ level, onComplete }: RouterInternalsProps) {
       completedRef.current = true
       runningRef.current   = false
       const throughput = totalPackets > 0 ? state.delivered / totalPackets : 1
-      onComplete(throughput >= target, 0)
+      onComplete(throughput >= target, hintIdx)
     }
   }, [state.done])
+
+  // When the scenario regenerates, reset sim state.
+  useEffect(() => {
+    completedRef.current = false
+    runningRef.current   = false
+    dispatch({ type: 'RESET', mode: modes[0] })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [setup])
+
+  function newScenario() {
+    setScenarioKey(k => k + 1)
+    setHintIdx(0)
+  }
 
   // Clear anim overlay after 400 ms
   useEffect(() => {
@@ -427,6 +510,14 @@ export function RouterInternals({ level, onComplete }: RouterInternalsProps) {
           <Button size="sm" variant="secondary" onClick={handleReset}>
             Reset
           </Button>
+          <Button size="sm" variant="ghost" onClick={newScenario}>
+            New scenario
+          </Button>
+          {hintIdx < hints.length && (
+            <Button size="sm" variant="ghost" onClick={() => setHintIdx(n => n + 1)}>
+              Hint ({hintIdx + 1}/{hints.length})
+            </Button>
+          )}
 
           {/* Throughput bar */}
           <div className="flex-1 flex items-center gap-2 min-w-[140px]">
@@ -443,6 +534,14 @@ export function RouterInternals({ level, onComplete }: RouterInternalsProps) {
             <span className="text-xs font-mono text-noc-muted">{throughputPct}%</span>
           </div>
         </div>
+
+        {hintIdx > 0 && (
+          <div className="border border-noc-border rounded px-3 py-2 flex flex-col gap-1">
+            {hints.slice(0, hintIdx).map((h, i) => (
+              <p key={i} className="text-noc-muted text-xs">💡 {h}</p>
+            ))}
+          </div>
+        )}
 
         {/* Log */}
         <div className="bg-noc-bg border border-noc-border rounded px-3 py-2 min-h-[60px]">

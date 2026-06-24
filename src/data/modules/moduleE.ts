@@ -1,4 +1,4 @@
-// Module E — Programmable Dataplanes & P4 (Deck 4)
+// Module E — Programmable Dataplanes and P4 (Deck 5)
 // Mechanics: P4 Pipeline Builder, Match-Action
 // Topics: fixed vs programmable switches, P4 (parser/ingress/egress/deparser), INT, SwitchML, DPU/RDMA
 
@@ -7,7 +7,7 @@ import type { ContentModule } from '@/types'
 export const moduleE: ContentModule = {
   id:          'E',
   title:       'Programmable Dataplanes & P4',
-  sourceDeck:  'Deck 4 — Programmable Dataplanes & P4 (66 slides)',
+  sourceDeck:  'Deck 5 — Programmable Dataplanes and P4 (66 slides)',
   description: 'Build a P4 pipeline: parser → match-action → deparser. Forward packets, tag telemetry, aggregate in-network.',
   accentClass: 'text-module-e',
   mechanics:   ['p4Pipeline', 'matchAction'],

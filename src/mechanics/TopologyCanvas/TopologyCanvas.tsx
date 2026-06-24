@@ -2,7 +2,7 @@
 // Drag nodes around a canvas, click pairs to wire them, then verify full reachability.
 // Templates define the initial node layout; the player draws all the links.
 
-import { useState, useRef, useCallback } from 'react'
+import { useEffect, useMemo, useState, useRef, useCallback } from 'react'
 import type { Level } from '@/types'
 import { Button } from '@/components/ui/Button'
 import { Badge }  from '@/components/ui/Badge'
@@ -16,6 +16,33 @@ interface Setup {
   template:        string
   maxLinks?:       number   // optional cap on total links
   minRedundancy?:  number   // min link-count per router (0 = no constraint)
+}
+
+function rand(min: number, max: number) {
+  return Math.floor(Math.random() * (max - min + 1)) + min
+}
+
+const HINTS: Record<string, string[]> = {
+  'B-L03': [
+    'A star with the router in the middle uses N links for N hosts — keep it simple.',
+    'Make sure each host has at least one link before clicking Check Reachability.',
+  ],
+  'B-L03B': [
+    'Each router needs at least 2 links — count clockwise around the ring as you wire.',
+    'A 4-router ring usually needs ~6 links once you also connect the two hosts to their nearest router.',
+  ],
+  'B-L03C': [
+    'Sparse is the point — every link you can avoid saves one of your 9.',
+    'Try a tree rooted at one core router; each leaf branch costs exactly 1 link.',
+  ],
+  'D-L02': [
+    'Each VLAN host attaches to its local switch; the two switches need exactly one trunk between them.',
+    'A trunk is just a normal link in this view — the magic is the 802.1Q tag the switches add on egress and strip on ingress.',
+  ],
+  'D-L03': [
+    'Each tenant\'s hosts connect to their own vSwitch; the vSwitches connect to the underlay router pair.',
+    'Tunnel endpoints (vSwitches) need a path through the underlay — encapsulated packets just look like outer-IP traffic to the routers.',
+  ],
 }
 
 // ── Node / template types ────────────────────────────────────────────────────
@@ -38,40 +65,116 @@ interface Template {
 const SVG_W = 700
 const SVG_H = 400
 
-const TEMPLATES: Record<string, Template> = {
-  office: {
-    description: 'Connect the three workstations through the office router so they can all talk to each other.',
-    nodes: [
-      { id: 'r1',  label: 'R1',   type: 'router', x: 350, y: 200 },
-      { id: 'h1',  label: 'PC-A', type: 'host',   x: 120, y: 100 },
-      { id: 'h2',  label: 'PC-B', type: 'host',   x: 120, y: 300 },
-      { id: 'h3',  label: 'PC-C', type: 'host',   x: 580, y: 200 },
-    ],
+const TEMPLATE_FACTORIES: Record<string, () => Template> = {
+  office: () => {
+    const numHosts = rand(2, 4)
+    const cx = 350, cy = 200, R = 150
+    const nodes: NodeDef[] = [
+      { id: 'r1', label: 'R1', type: 'router', x: cx, y: cy },
+    ]
+    for (let i = 0; i < numHosts; i++) {
+      const angle = (2 * Math.PI * i) / numHosts - Math.PI / 2
+      nodes.push({
+        id:    `h${i + 1}`,
+        label: `PC-${String.fromCharCode(65 + i)}`,
+        type:  'host',
+        x:     cx + Math.cos(angle) * R,
+        y:     cy + Math.sin(angle) * R,
+      })
+    }
+    return {
+      description: `Connect all ${numHosts} workstations through the router so they can talk to each other.`,
+      nodes,
+    }
   },
-  ring: {
-    description: 'Wire the four routers so every router has at least 2 links (giving redundant paths between all hosts).',
-    nodes: [
-      { id: 'r1', label: 'R1',   type: 'router', x: 210, y: 130 },
-      { id: 'r2', label: 'R2',   type: 'router', x: 490, y: 130 },
-      { id: 'r3', label: 'R3',   type: 'router', x: 490, y: 300 },
-      { id: 'r4', label: 'R4',   type: 'router', x: 210, y: 300 },
-      { id: 'h1', label: 'PC-A', type: 'host',   x:  80, y: 215 },
-      { id: 'h2', label: 'PC-B', type: 'host',   x: 620, y: 215 },
-    ],
+  ring: () => {
+    const numRouters = rand(4, 5)
+    const cx = 350, cy = 200, R = 90
+    const nodes: NodeDef[] = []
+    for (let i = 0; i < numRouters; i++) {
+      const angle = (2 * Math.PI * i) / numRouters - Math.PI / 2
+      nodes.push({
+        id: `r${i + 1}`, label: `R${i + 1}`, type: 'router',
+        x:  cx + Math.cos(angle) * R, y: cy + Math.sin(angle) * R,
+      })
+    }
+    nodes.push({ id: 'h1', label: 'PC-A', type: 'host', x: 80,  y: 200 })
+    nodes.push({ id: 'h2', label: 'PC-B', type: 'host', x: 620, y: 200 })
+    return {
+      description: `Wire the ${numRouters} routers so every router has at least 2 links (redundant paths between all hosts).`,
+      nodes,
+    }
   },
-  backbone: {
-    description: 'Connect the backbone (≤ 9 links total) so every branch can reach HQ through the core routers.',
-    nodes: [
+  'trunk-link': () => {
+    // Two access switches across a trunk; each carries hosts in 2 VLANs.
+    const hostsPerSwitch = rand(2, 3)
+    const nodes: NodeDef[] = [
+      { id: 's1', label: 'SW-1', type: 'switch', x: 240, y: 200 },
+      { id: 's2', label: 'SW-2', type: 'switch', x: 460, y: 200 },
+    ]
+    for (let i = 0; i < hostsPerSwitch; i++) {
+      nodes.push({
+        id: `h1-${i}`, label: `V${i % 2 === 0 ? 10 : 20}-A${i + 1}`, type: 'host',
+        x: 100, y: 80 + i * 90,
+      })
+      nodes.push({
+        id: `h2-${i}`, label: `V${i % 2 === 0 ? 10 : 20}-B${i + 1}`, type: 'host',
+        x: 600, y: 80 + i * 90,
+      })
+    }
+    return {
+      description: `Wire SW-1 and SW-2 with a trunk link between them, and connect each host to its local switch — so VLAN 10 and VLAN 20 hosts can still talk across the trunk.`,
+      nodes,
+    }
+  },
+  'vxlan-overlay': () => {
+    // Two tenants, each with hosts on its own vSwitch. Two underlay routers connect.
+    const hostsPerTenant = rand(2, 2)
+    const nodes: NodeDef[] = [
+      { id: 'r1', label: 'R1', type: 'router', x: 280, y: 200 },
+      { id: 'r2', label: 'R2', type: 'router', x: 460, y: 200 },
+      { id: 's1', label: 'vSW-T1', type: 'switch', x: 150, y: 140 },
+      { id: 's2', label: 'vSW-T2', type: 'switch', x: 150, y: 280 },
+      { id: 's3', label: 'vSW-T1', type: 'switch', x: 590, y: 140 },
+      { id: 's4', label: 'vSW-T2', type: 'switch', x: 590, y: 280 },
+    ]
+    for (let i = 0; i < hostsPerTenant; i++) {
+      nodes.push({ id: `t1a-${i}`, label: `T1-A${i + 1}`, type: 'host', x:  60, y:  90 + i * 50 })
+      nodes.push({ id: `t2a-${i}`, label: `T2-A${i + 1}`, type: 'host', x:  60, y: 260 + i * 50 })
+      nodes.push({ id: `t1b-${i}`, label: `T1-B${i + 1}`, type: 'host', x: 680, y:  90 + i * 50 })
+      nodes.push({ id: `t2b-${i}`, label: `T2-B${i + 1}`, type: 'host', x: 680, y: 260 + i * 50 })
+    }
+    return {
+      description: `Build the underlay (R1 ↔ R2) and connect each tenant's vSwitch to a router. Hosts attach to their tenant's vSwitch — VXLAN tunnels (logical, not drawn) ride the underlay.`,
+      nodes,
+    }
+  },
+  backbone: () => {
+    const numEdges    = rand(3, 4)
+    const numBranches = rand(3, 4)
+    const nodes: NodeDef[] = [
       { id: 'c1', label: 'Core1', type: 'router', x: 260, y: 130 },
       { id: 'c2', label: 'Core2', type: 'router', x: 450, y: 130 },
-      { id: 'e1', label: 'Edge1', type: 'router', x: 110, y: 255 },
-      { id: 'e2', label: 'Edge2', type: 'router', x: 350, y: 270 },
-      { id: 'e3', label: 'Edge3', type: 'router', x: 590, y: 255 },
-      { id: 'h1', label: 'HQ',      type: 'host', x:  60, y: 360 },
-      { id: 'h2', label: 'Branch1', type: 'host', x: 220, y: 370 },
-      { id: 'h3', label: 'Branch2', type: 'host', x: 470, y: 370 },
-      { id: 'h4', label: 'Branch3', type: 'host', x: 640, y: 360 },
-    ],
+    ]
+    for (let i = 0; i < numEdges; i++) {
+      nodes.push({
+        id: `e${i + 1}`, label: `Edge${i + 1}`, type: 'router',
+        x:  100 + i * (500 / Math.max(1, numEdges - 1)),
+        y:  255,
+      })
+    }
+    nodes.push({ id: 'h0', label: 'HQ', type: 'host', x: 60, y: 360 })
+    for (let i = 0; i < numBranches; i++) {
+      nodes.push({
+        id: `h${i + 1}`, label: `Branch${i + 1}`, type: 'host',
+        x:  200 + i * (440 / Math.max(1, numBranches - 1)),
+        y:  370,
+      })
+    }
+    return {
+      description: 'Connect the backbone so every branch can reach HQ via a core router — stay under your link budget.',
+      nodes,
+    }
   },
 }
 
@@ -126,9 +229,23 @@ interface VerifyResult {
 
 export function TopologyCanvas({ level, onComplete }: TopologyCanvasProps) {
   const setup    = level.setup as Setup
-  const template = TEMPLATES[setup.template] ?? TEMPLATES['office']
-  const maxLinks = setup.maxLinks
+  const factory  = TEMPLATE_FACTORIES[setup.template] ?? TEMPLATE_FACTORIES['office']
   const minRed   = setup.minRedundancy ?? 0
+  const hints    = HINTS[level.id] ?? []
+
+  const [scenarioKey, setScenarioKey] = useState(0)
+  const template = useMemo(() => factory(), [factory, scenarioKey])
+  // Randomize maxLinks per backbone scenario based on node count.
+  const maxLinks = useMemo(() => {
+    if (setup.maxLinks === undefined) return undefined
+    if (setup.template === 'backbone') {
+      const numRouters = template.nodes.filter((n) => n.type === 'router').length
+      const numHosts   = template.nodes.filter((n) => n.type === 'host').length
+      // Generous enough to allow a tree solution.
+      return numRouters + numHosts + rand(0, 2)
+    }
+    return setup.maxLinks
+  }, [setup, template])
 
   // Mutable node positions (start from template)
   const [nodes,   setNodes]  = useState<NodeDef[]>(() => template.nodes.map(n => ({ ...n })))
@@ -136,6 +253,7 @@ export function TopologyCanvas({ level, onComplete }: TopologyCanvasProps) {
   const [selected, setSelected] = useState<string | null>(null)
   const [verify,   setVerify]   = useState<VerifyResult | null>(null)
   const [passed,   setPassed]   = useState(false)
+  const [hintIdx,  setHintIdx]  = useState(0)
 
   // Drag tracking via refs (no re-render needed mid-drag)
   const dragRef = useRef<{ id: string; ox: number; oy: number; px: number; py: number } | null>(null)
@@ -239,9 +357,9 @@ export function TopologyCanvas({ level, onComplete }: TopologyCanvasProps) {
     setVerify(result)
     if (ok && !passed) {
       setPassed(true)
-      onComplete(true, 0)
+      onComplete(true, hintIdx)
     }
-  }, [nodes, links, minRed, passed, onComplete])
+  }, [nodes, links, minRed, passed, onComplete, hintIdx])
 
   function handleReset() {
     setNodes(template.nodes.map(n => ({ ...n })))
@@ -250,6 +368,21 @@ export function TopologyCanvas({ level, onComplete }: TopologyCanvasProps) {
     setVerify(null)
     setPassed(false)
   }
+
+  function newScenario() {
+    setScenarioKey(k => k + 1)
+    setHintIdx(0)
+    // handleReset will run with the new template after re-render via the effect below.
+  }
+
+  // When the scenario changes (factory output changes), reset board state.
+  useEffect(() => {
+    setNodes(template.nodes.map(n => ({ ...n })))
+    setLinks(new Set())
+    setSelected(null)
+    setVerify(null)
+    setPassed(false)
+  }, [template])
 
   // ── Render ────────────────────────────────────────────────────────────────
 
@@ -373,7 +506,21 @@ export function TopologyCanvas({ level, onComplete }: TopologyCanvasProps) {
         <div className="flex gap-2 flex-wrap">
           <Button size="sm" onClick={handleVerify}>Check Reachability</Button>
           <Button size="sm" variant="secondary" onClick={handleReset}>Reset</Button>
+          <Button size="sm" variant="ghost" onClick={newScenario}>New scenario</Button>
+          {hintIdx < hints.length && (
+            <Button size="sm" variant="ghost" onClick={() => setHintIdx(n => n + 1)}>
+              Hint ({hintIdx + 1}/{hints.length})
+            </Button>
+          )}
         </div>
+
+        {hintIdx > 0 && (
+          <div className="border border-noc-border rounded px-3 py-2 flex flex-col gap-1">
+            {hints.slice(0, hintIdx).map((h, i) => (
+              <p key={i} className="text-noc-muted text-xs">💡 {h}</p>
+            ))}
+          </div>
+        )}
 
         {verify && (
           <div className={`rounded px-3 py-2 text-sm ${

@@ -7,6 +7,7 @@ import { Campaign }  from '@/pages/Campaign'
 import { Sandbox }   from '@/pages/Sandbox'
 import { Flashcards } from '@/pages/Flashcards'
 import { ExamPrep }  from '@/pages/ExamPrep'
+import { Study }     from '@/pages/Study'
 import { Level }     from '@/pages/Level'
 
 export function App() {
@@ -19,6 +20,7 @@ export function App() {
           <Route path="/sandbox"     element={<Sandbox />}   />
           <Route path="/flashcards"  element={<Flashcards />} />
           <Route path="/exam-prep"   element={<ExamPrep />}  />
+          <Route path="/study"       element={<Study />}     />
           <Route path="/level/:levelId" element={<Level />}  />
         </Routes>
       </AppShell>
