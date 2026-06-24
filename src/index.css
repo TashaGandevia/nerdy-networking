@@ -1,0 +1,55 @@
+/* Global styles — Tailwind base + NOC dashboard defaults */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: dark;
+  }
+
+  html,
+  body,
+  #root {
+    @apply h-full;
+  }
+
+  body {
+    @apply bg-noc-bg text-noc-text font-sans antialiased;
+  }
+
+  /* Monospace for anything that looks like a network address or code */
+  .font-addr {
+    @apply font-mono text-sm tracking-tight;
+  }
+}
+
+@layer components {
+  /* Reusable link-state color utilities */
+  .link-up        { @apply text-link-up; }
+  .link-congested { @apply text-link-congested; }
+  .link-down      { @apply text-link-down; }
+  .link-packet    { @apply text-link-packet; }
+
+  /* NOC panel card */
+  .noc-card {
+    @apply bg-noc-surface border border-noc-border rounded-lg;
+  }
+
+  /* Scrollbar styling for NOC aesthetic */
+  ::-webkit-scrollbar        { @apply w-1.5; }
+  ::-webkit-scrollbar-track  { @apply bg-noc-bg; }
+  ::-webkit-scrollbar-thumb  { @apply bg-noc-border rounded-full; }
+}
+
+@layer utilities {
+  /* Packet animation along an SVG path — driven by JS, keyframes here */
+  @keyframes packet-move {
+    from { offset-distance: 0%; }
+    to   { offset-distance: 100%; }
+  }
+
+  .animate-packet {
+    animation: packet-move 1s linear infinite;
+  }
+}
