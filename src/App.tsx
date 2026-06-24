@@ -12,7 +12,7 @@ import { Level }     from '@/pages/Level'
 
 export function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename="/nerdy-networking">
       <AppShell>
         <Routes>
           <Route path="/"            element={<Home />}      />
