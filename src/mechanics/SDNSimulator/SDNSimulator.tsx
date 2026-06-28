@@ -1,5 +1,7 @@
 import { useMemo, useState } from 'react'
 import type { Level } from '@/types'
+import type { SdnGameId } from '@/data/sdnQuestions'
+import { SDNQuestionGame } from './SDNQuestionGame'
 
 interface Props {
   level: Level
@@ -155,7 +157,13 @@ function choiceClass(selected: boolean) {
     : 'border-noc-border bg-noc-bg/50 text-noc-text hover:border-noc-muted'}`
 }
 
-export function SDNSimulator({ level, onComplete }: Props) {
+export function SDNSimulator(props: Props) {
+  const gameId = props.level.setup.game as SdnGameId | undefined
+  if (gameId) return <SDNQuestionGame {...props} gameId={gameId} />
+  return <LegacySDNSimulator {...props} />
+}
+
+function LegacySDNSimulator({ level, onComplete }: Props) {
   const mission = (level.setup.mission ?? 'why-sdn') as MissionId
   const copy = MISSIONS[mission]
   const missionNumber = Number(level.id.split('L')[1]) || 1
