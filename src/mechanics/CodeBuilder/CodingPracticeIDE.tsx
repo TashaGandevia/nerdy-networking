@@ -36,8 +36,9 @@ const TOPICS: Record<string,Challenge> = {
 const KIND_STYLE:Record<Kind,string>={structure:'border-noc-muted bg-noc-border/30 text-noc-text',variable:'border-noc-text/40 bg-noc-text/5 text-noc-bright',operator:'border-link-congested/50 bg-link-congested/10 text-link-congested',control:'border-module-b/50 bg-module-b/10 text-module-b',value:'border-link-up/50 bg-link-up/10 text-link-up',function:'border-link-packet/50 bg-link-packet/10 text-link-packet'}
 
 function endlessChallenge(seed:number):Challenge {
-  const names=['total','points','level','energy']; const values=[5,10,20,100]; const name=names[seed%names.length]; const value=values[(seed*3)%values.length]
-  return {title:'Endless Practice',goal:`Create ${name} and assign it ${value}.`,expected:['declare-score',value===10?'assign-10':'wrong-zero'],available:['declare-score','assign-10','wrong-zero','wrong-return'],input:'Generated challenge',output:`${name} = ${value}`,hints:['Declare the variable first.','Then assign the requested value.','Use the declaration followed by assignment.']}
+  const pool=[TOPICS.variables,TOPICS.if,TOPICS.functions,TOPICS.loops,TOPICS.objects,TOPICS.algorithms]
+  const generated=pool[seed%pool.length]
+  return {...generated,title:`Endless Practice · ${generated.title}`,goal:`Generated challenge: ${generated.goal}`}
 }
 
 export function CodingPracticeIDE({level,onComplete}:Props){
