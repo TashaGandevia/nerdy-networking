@@ -7,7 +7,6 @@ export type MechanicId =
   | 'matchAction'     // Match-Action / Flow Table — shared across SDN, VLAN, P4
   | 'sdnSimulator'    // SDN Controller Lab — architecture, flow rules, controller events
   | 'virtualizationLab' // Multi-tenant datacenter and overlay simulations
-  | 'codeBuilder'       // Block-based programming practice IDE
   | 'routerInternals' // Router architecture — fabric, HOL, scheduling
   | 'congestionChart' // CongWin-vs-time live chart
   | 'p4Pipeline'      // Parser → Ingress → Egress → Deparser builder

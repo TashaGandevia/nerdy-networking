@@ -4,6 +4,7 @@
 // can have a purpose-built UI with its own win condition).
 
 import type { Level } from '@/types'
+import { CongestionCodeLab } from './CongestionCodeLab'
 import { PredictMode }      from './modes/PredictMode'
 import { DiagnoseMode }     from './modes/DiagnoseMode'
 import { OneOverSqrtPMode } from './modes/OneOverSqrtPMode'
@@ -17,6 +18,10 @@ interface CongestionChartProps {
 }
 
 export function CongestionChart({ level, onComplete }: CongestionChartProps) {
+  if (level.setup.codeSection) {
+    return <CongestionCodeLab level={level} onComplete={onComplete} />
+  }
+
   switch (level.id) {
     case 'A-L01': return <PredictMode      level={level} onComplete={onComplete} />
     case 'A-L02': return <DiagnoseMode     level={level} onComplete={onComplete} />

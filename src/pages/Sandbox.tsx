@@ -16,7 +16,6 @@ const MECHANIC_LABELS: Record<MechanicId, string> = {
   matchAction:     'Match-Action Table',
   sdnSimulator:    'SDN Controller Lab',
   virtualizationLab: 'Virtualization Lab',
-  codeBuilder:      'Code Builder IDE',
   routerInternals: 'Router Internals',
   congestionChart: 'Congestion Chart',
   p4Pipeline:      'P4 Pipeline',
