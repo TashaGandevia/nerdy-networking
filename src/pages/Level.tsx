@@ -8,7 +8,7 @@ import type { StarCount } from '@/types'
 import { Button } from '@/components/ui/Button'
 import { StarRating } from '@/components/ui/StarRating'
 import { Badge } from '@/components/ui/Badge'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 type CompletionState = { passed: boolean; stars: StarCount; hintsUsed: number } | null
 
@@ -20,6 +20,10 @@ export function Level() {
   const { levelId } = useParams<{ levelId: string }>()
   const navigate    = useNavigate()
   const [completion, setCompletion] = useState<CompletionState>(null)
+
+  useEffect(() => {
+    setCompletion(null)
+  }, [levelId])
 
   const getBestStars  = useCampaignStore((s) => s.getBestStars)
   const completeLevel = useCampaignStore((s) => s.completeLevel)
@@ -99,7 +103,7 @@ export function Level() {
     )
   }
 
-  const isSdnLab = safeLevel.mechanic === 'sdnSimulator'
+  const isSdnLab = safeLevel.mechanic === 'sdnSimulator' || Boolean(safeLevel.setup.questionTopic)
 
   return (
     <div className={`${isSdnLab ? 'max-w-7xl' : 'max-w-3xl'} mx-auto flex flex-col gap-4`}>

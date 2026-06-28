@@ -7,6 +7,8 @@ import { ActionBlockMode }  from './modes/ActionBlockMode'
 import { MultiTableMode }   from './modes/MultiTableMode'
 import { IntTagMode }       from './modes/IntTagMode'
 import { FullPipelineMode } from './modes/FullPipelineMode'
+import { P4QuestionGame }    from './P4QuestionGame'
+import type { P4TopicId }    from '@/data/p4Questions'
 
 interface Props {
   level: Level
@@ -14,6 +16,9 @@ interface Props {
 }
 
 export function P4Pipeline({ level, onComplete }: Props) {
+  const topicId = level.setup.questionTopic as P4TopicId | undefined
+  if (topicId) return <P4QuestionGame level={level} topicId={topicId} onComplete={onComplete} />
+
   switch (level.id) {
     case 'E-L01': return <ParserMode       level={level} onComplete={onComplete} />
     case 'E-L02': return <LpmTableMode     level={level} onComplete={onComplete} />
