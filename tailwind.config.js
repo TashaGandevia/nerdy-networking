@@ -29,6 +29,7 @@ export default {
           c: '#79c0ff',  // Virtualization    — light blue
           d: '#ffa657',  // Congestion        — orange
           e: '#56d364',  // P4 / Dataplane    — green
+          g: '#a371f7',  // Coding Practice   — violet
         },
       },
       fontFamily: {

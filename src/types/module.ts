@@ -4,7 +4,7 @@ import type { Flashcard } from './flashcard'
 import type { MechanicId } from './mechanic'
 import type { Level } from './campaign'
 
-export type ModuleId = 'A' | 'B' | 'C' | 'D' | 'E' | 'F'
+export type ModuleId = 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G'
 
 export interface ContentModule {
   id: ModuleId

@@ -9,6 +9,7 @@ import { MasteryMeter } from '@/components/ui/MasteryMeter'
 const MODULE_RING: Record<string, string> = {
   A: 'text-module-a', B: 'text-module-b',
   C: 'text-module-c', D: 'text-module-d', E: 'text-module-e',
+  F: 'text-link-packet', G: 'text-module-g',
 }
 
 const NAV_ITEMS = [

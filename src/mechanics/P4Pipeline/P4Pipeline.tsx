@@ -9,6 +9,7 @@ import { IntTagMode }       from './modes/IntTagMode'
 import { FullPipelineMode } from './modes/FullPipelineMode'
 import { P4QuestionGame }    from './P4QuestionGame'
 import type { P4TopicId }    from '@/data/p4Questions'
+import { CodeBuilderIDE }    from './CodeBuilderIDE'
 
 interface Props {
   level: Level
@@ -16,6 +17,7 @@ interface Props {
 }
 
 export function P4Pipeline({ level, onComplete }: Props) {
+  if (level.setup.codeBuilder) return <CodeBuilderIDE level={level} onComplete={onComplete} />
   const topicId = level.setup.questionTopic as P4TopicId | undefined
   if (topicId) return <P4QuestionGame level={level} topicId={topicId} onComplete={onComplete} />
 

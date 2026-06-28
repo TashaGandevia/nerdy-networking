@@ -103,7 +103,7 @@ export function Level() {
     )
   }
 
-  const isSdnLab = safeLevel.mechanic === 'sdnSimulator' || Boolean(safeLevel.setup.questionTopic)
+  const isSdnLab = safeLevel.mechanic === 'sdnSimulator' || safeLevel.mechanic === 'virtualizationLab' || safeLevel.mechanic === 'codeBuilder' || Boolean(safeLevel.setup.questionTopic) || Boolean(safeLevel.setup.codeBuilder)
 
   return (
     <div className={`${isSdnLab ? 'max-w-7xl' : 'max-w-3xl'} mx-auto flex flex-col gap-4`}>

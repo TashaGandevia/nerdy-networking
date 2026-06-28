@@ -9,9 +9,10 @@ import { moduleC } from './modules/moduleC'
 import { moduleD } from './modules/moduleD'
 import { moduleE } from './modules/moduleE'
 import { moduleF } from './modules/moduleF'
+import { moduleG } from './modules/moduleG'
 
 /** All content modules in display order */
-export const MODULES: ContentModule[] = [moduleA, moduleB, moduleC, moduleD, moduleE, moduleF]
+export const MODULES: ContentModule[] = [moduleA, moduleB, moduleC, moduleD, moduleE, moduleF, moduleG]
 
 /** Lookup by module ID */
 export const MODULE_BY_ID: Record<string, ContentModule> = Object.fromEntries(
@@ -94,6 +95,14 @@ export const CAMPAIGN_ACTS: Act[] = [
     description: 'Build a P4 pipeline from parser to deparser. Tag INT, forward, verify.',
     moduleIds:   ['E'],
     levels:      moduleE.levels,
+    unlockThreshold: 0.7,
+  },
+  {
+    id: 'act-10', number: 10,
+    title:       'Code Builder',
+    description: 'Build programming intuition with structured visual blocks before moving to real syntax.',
+    moduleIds:   ['G'],
+    levels:      moduleG.levels,
     unlockThreshold: 0.7,
   },
 ]
