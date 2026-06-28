@@ -2,8 +2,8 @@
 
 import type { MechanicId } from './mechanic'
 
-/** 1–3 star score on a level */
-export type StarCount = 1 | 2 | 3
+/** Star score on a level (most mechanics use 3; the SDN lab uses the GDD's 5-star scale) */
+export type StarCount = 1 | 2 | 3 | 4 | 5
 
 export interface StarCriteria {
   /** Correct solution reached */

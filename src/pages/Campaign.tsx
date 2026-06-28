@@ -18,6 +18,7 @@ export function Campaign() {
   const navigate    = useNavigate()
   const getMastery  = useFlashcardStore((s) => s.getMastery)
   const getBestStars = useCampaignStore((s) => s.getBestStars)
+  const isCompleted  = useCampaignStore((s) => s.isCompleted)
 
   return (
     <div className="max-w-3xl mx-auto flex flex-col gap-8">
@@ -76,7 +77,9 @@ export function Campaign() {
                       <p className="text-noc-muted text-xs mt-0.5 line-clamp-2">{level.intent}</p>
                     </div>
                     <div className="flex flex-col items-end gap-1 shrink-0">
-                      <StarRating stars={stars} size="sm" />
+                      {level.mechanic === 'sdnSimulator'
+                        ? <Badge variant={isCompleted(level.id) ? 'up' : 'idle'}>{isCompleted(level.id) ? 'Completed' : 'XP'}</Badge>
+                        : <StarRating stars={stars} size="sm" />}
                       <span className="text-noc-muted text-xs">
                         {'●'.repeat(level.difficulty)}{'○'.repeat(5 - level.difficulty)}
                       </span>

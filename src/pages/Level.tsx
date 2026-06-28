@@ -49,9 +49,11 @@ export function Level() {
    * @param hintsUsed  - Number of hints the player consumed
    */
   function handleComplete(passed: boolean, hintsUsed: number) {
-    // Star calculation: correctness (1) + efficiency heuristic (1) + no hints (1)
+    // The SDN GDD rewards 5 / 3 / 2 stars; existing mechanics retain their 3-star scale.
     const starCount: StarCount = passed
-      ? hintsUsed === 0 ? 3 : hintsUsed <= 1 ? 2 : 1
+      ? safeLevel.mechanic === 'sdnSimulator'
+        ? hintsUsed === 0 ? 5 : hintsUsed === 1 ? 3 : 2
+        : hintsUsed === 0 ? 3 : hintsUsed <= 1 ? 2 : 1
       : 1
 
     if (passed) {
@@ -70,7 +72,12 @@ export function Level() {
           {completion.passed ? 'Level complete!' : 'Not quite — try again?'}
         </p>
 
-        {completion.passed && <StarRating stars={completion.stars} size="lg" />}
+        {completion.passed && safeLevel.mechanic === 'sdnSimulator' ? (
+          <div className="rounded-lg border border-module-c/40 bg-module-c/10 px-5 py-3 text-center">
+            <p className="text-sm font-semibold text-module-c">NovaNet promotion progress updated</p>
+            <p className="mt-1 text-xs text-noc-muted">XP earned · New simulator content unlocked</p>
+          </div>
+        ) : completion.passed ? <StarRating stars={completion.stars} size="lg" /> : null}
 
         {bestStars !== null && bestStars < completion.stars && (
           <Badge variant="up">New best!</Badge>
@@ -80,7 +87,9 @@ export function Level() {
 
         <div className="flex gap-3 flex-wrap justify-center">
           <Button onClick={() => setCompletion(null)}>
-            {completion.passed && completion.stars < 3 ? 'Try for 3 stars' : 'Play again'}
+            {completion.passed && safeLevel.mechanic !== 'sdnSimulator' && completion.stars < 3
+              ? 'Try for 3 stars'
+              : 'Play again'}
           </Button>
           <Button variant="secondary" onClick={() => navigate(-1)}>
             Back
@@ -90,8 +99,10 @@ export function Level() {
     )
   }
 
+  const isSdnLab = safeLevel.mechanic === 'sdnSimulator'
+
   return (
-    <div className="max-w-3xl mx-auto flex flex-col gap-4">
+    <div className={`${isSdnLab ? 'max-w-7xl' : 'max-w-3xl'} mx-auto flex flex-col gap-4`}>
       {/* Breadcrumb */}
       <div className="flex items-center gap-2">
         <button

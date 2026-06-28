@@ -1,11 +1,11 @@
-// Star rating display (1–3 stars) used on level cards and level completion screens
+// Star rating display used on level cards and level completion screens
 
 import type { StarCount } from '@/types'
 
 interface StarRatingProps {
-  /** Stars earned (1–3), or null if the level has never been completed */
+  /** Stars earned, or null if the level has never been completed */
   stars: StarCount | null
-  /** Total stars possible (always 3 in this game) */
+  /** Total stars possible */
   max?: number
   size?: 'sm' | 'md' | 'lg'
 }
@@ -13,7 +13,7 @@ interface StarRatingProps {
 const SIZE_PX: Record<string, number> = { sm: 14, md: 18, lg: 24 }
 
 /**
- * Renders 1–3 star glyphs; filled stars = earned, hollow = not yet.
+ * Renders star glyphs; filled stars = earned, hollow = not yet.
  *
  * @param stars - Stars earned this level (null = not completed)
  * @param max   - Maximum stars (default 3)

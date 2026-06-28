@@ -14,6 +14,7 @@ const MECHANIC_LABELS: Record<MechanicId, string> = {
   topologyCanvas:  'Topology Canvas',
   routingGraph:    'Routing Graph',
   matchAction:     'Match-Action Table',
+  sdnSimulator:    'SDN Controller Lab',
   routerInternals: 'Router Internals',
   congestionChart: 'Congestion Chart',
   p4Pipeline:      'P4 Pipeline',
@@ -23,6 +24,7 @@ const MECHANIC_LABELS: Record<MechanicId, string> = {
 export function Sandbox() {
   const navigate     = useNavigate()
   const getBestStars = useCampaignStore((s) => s.getBestStars)
+  const isCompleted  = useCampaignStore((s) => s.isCompleted)
   const [filter, setFilter] = useState<MechanicId | 'all'>('all')
 
   const mechanicIds = Object.keys(MECHANIC_LABELS) as MechanicId[]
@@ -92,7 +94,9 @@ export function Sandbox() {
                     <p className="text-noc-muted text-xs line-clamp-2">{level.intent}</p>
                     <div className="flex items-center justify-between mt-auto pt-1">
                       <Badge variant="idle">{MECHANIC_LABELS[level.mechanic]}</Badge>
-                      <StarRating stars={stars} size="sm" />
+                      {level.mechanic === 'sdnSimulator'
+                        ? <Badge variant={isCompleted(level.id) ? 'up' : 'idle'}>{isCompleted(level.id) ? 'Completed' : 'NovaNet XP'}</Badge>
+                        : <StarRating stars={stars} size="sm" />}
                     </div>
                   </Card>
                 )

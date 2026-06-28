@@ -12,6 +12,7 @@ import { MatchAction }     from './MatchAction/MatchAction'
 import { RouterInternals } from './RouterInternals/RouterInternals'
 import { CongestionChart } from './CongestionChart/CongestionChart'
 import { P4Pipeline }      from './P4Pipeline/P4Pipeline'
+import { SDNSimulator }    from './SDNSimulator/SDNSimulator'
 
 export interface MechanicProps {
   level:      Level
@@ -23,6 +24,7 @@ export const MECHANIC_REGISTRY: Record<MechanicId, ComponentType<MechanicProps>>
   topologyCanvas:  TopologyCanvas,
   routingGraph:    RoutingGraph,
   matchAction:     MatchAction,
+  sdnSimulator:    SDNSimulator,
   routerInternals: RouterInternals,
   congestionChart: CongestionChart,
   p4Pipeline:      P4Pipeline,
